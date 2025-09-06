@@ -8,5 +8,6 @@ http:
   services:
     product-service:
       loadBalancer:
+        passHostHeader: false
         servers:
           - url: "${PRODUCT_SERVICE_URL}"
