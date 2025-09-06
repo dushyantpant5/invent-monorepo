@@ -5,6 +5,16 @@ api:
 log:
   level: DEBUG
 
+# Access log is handy for local debugging
+accessLog: {}
+
+# We'll bind 'web' to $PORT and 'traefik' (dashboard) to 8081
+entryPoints:
+  web:
+    address: ":8080"
+  traefik:
+    address: ":8081"
+
 providers:
   file:
     filename: ./dynamic.yml
