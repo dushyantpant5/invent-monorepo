@@ -2,7 +2,7 @@ http:
   routers:
     product-router:
       rule: "PathPrefix(`/api/product`)"
-      entryPoints: ["${ENTRY_POINT:-web}"]
+      entryPoints: ["${ENTRY_POINT}"]
       service: product-service
 
   services:
