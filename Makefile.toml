@@ -1,16 +1,20 @@
 [tasks.run-traefik]
 workspace = false
-description = "Run traefik for local dev (via start-traefik.sh)"
+description = "Run traefik for local dev (render template then run)"
 command = "sh"
-args = ["-c", "./traefik/start-traefik.sh"]
+args = ["-c", "[ -f .env ] && . .env || true; cd traefik && ./start-traefik.sh"]
 
 [tasks.run-product]
 workspace = false
 description = "Run product service"
 command = "sh"
-args = ["-c", "cargo run -p product"]
+args = [
+    "-c",
+    "[ -f .env ] && . .env || true; cd services/product && cargo run -p product",
+]
 
 [tasks.run-all]
 workspace = false
-description = "Run product and traefik in background (dev)"
-script = ["cargo run -p product &", "./traefik/start-traefik.sh &", "wait"]
+description = "Run product and traefik in background (dev) and stream logs"
+command = "sh"
+args = ["-c", "[ -f .env ] && . .env || true; ./scripts/run-all.sh"]

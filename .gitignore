@@ -7,3 +7,5 @@
 .env.local
 /traefik/backups
 /traefik/traefik
+/traefik/dynamic.yml
+tmp
