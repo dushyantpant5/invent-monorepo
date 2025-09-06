@@ -197,12 +197,14 @@ if [ "$ENABLE_DASHBOARD" = "true" ]; then
     --entryPoints.traefik.address=":8081" \
     --log.level=DEBUG
 else
-  # No dashboard: only ensure web entryPoint is bound to ${PORT}
-  echo "Executing: $TRA_BIN --configFile=$STATIC_CFG --providers.file.filename=$DYNAMIC_CFG --entryPoints.web.address=:${PORT} --log.level=DEBUG"
+  # No dashboard: bind both 'web' and 'http' entryPoints to ${PORT}
+  echo "Executing: $TRA_BIN --configFile=$STATIC_CFG --providers.file.filename=$DYNAMIC_CFG --entryPoints.web.address=:${PORT} --entryPoints.http.address=:${PORT} --log.level=DEBUG"
   exec "$TRA_BIN" \
     --configFile="$STATIC_CFG" \
     --providers.file.filename="$DYNAMIC_CFG" \
     --providers.file.watch=true \
     --entryPoints.web.address=":${PORT}" \
+    --entryPoints.http.address=":${PORT}" \
     --log.level=DEBUG
+
 fi
