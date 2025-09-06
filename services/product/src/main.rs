@@ -49,6 +49,11 @@ async fn main() -> anyhow::Result<()> {
         .nest("/api/product", crate::api::product::routes())
         .layer(Extension(shared_pool));
 
-    let addr: SocketAddr = "0.0.0.0:8082".parse()?;
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8082);
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     run_service(app, addr, "product-service").await
 }
