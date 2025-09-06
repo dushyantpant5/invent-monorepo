@@ -1,8 +1,8 @@
 [tasks.run-traefik]
 workspace = false
-description = "Run traefik for local dev"
+description = "Run traefik for local dev (via start-traefik.sh)"
 command = "sh"
-args = ["-c", "traefik --config.file=./traefik/traefik.yml --log.level=DEBUG"]
+args = ["-c", "./traefik/start-traefik.sh"]
 
 [tasks.run-product]
 workspace = false
@@ -13,8 +13,4 @@ args = ["-c", "cargo run -p product"]
 [tasks.run-all]
 workspace = false
 description = "Run product and traefik in background (dev)"
-script = [
-    "cargo run -p product &",
-    "traefik --config.file=./traefik/traefik.yml --log.level=DEBUG &",
-    "wait",
-]
+script = ["cargo run -p product &", "./traefik/start-traefik.sh &", "wait"]
