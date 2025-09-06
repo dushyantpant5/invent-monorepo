@@ -1,0 +1,21 @@
+[package]
+name = "product"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.6"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"
+
+#Centralized workspace dependencies 
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+dotenvy = { workspace = true }
+
+# local path crates
+db = { path = "../../crates/db" }
+app-runner = { path = "../../crates/app-runner" }
