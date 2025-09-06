@@ -2,14 +2,10 @@ api:
   dashboard: true
   insecure: true
 
-entryPoints:
-  web:
-    address: ":8080"
+log:
+  level: DEBUG
 
 providers:
   file:
-    filename: "./dynamic.yml"
+    filename: ./dynamic.yml
     watch: true
-
-log:
-  level: DEBUG
