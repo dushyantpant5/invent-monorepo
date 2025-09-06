@@ -101,10 +101,15 @@ EOF
 fi
 
 # -----------------------
-# Ensure ENTRY_POINT env is set so template substitution works reliably
+# Pick sensible default ENTRY_POINT depending on environment
 # -----------------------
-# default to 'web' for local dev; on Render we will also bind 'http' so either works
-ENTRY_POINT="${ENTRY_POINT:-web}"
+# - If dashboard is enabled (local dev), default to 'web'
+# - If dashboard is disabled (Render/prod), default to 'http' which Render's runtime exposes
+if [ "${ENABLE_DASHBOARD:-false}" = "true" ]; then
+  ENTRY_POINT="${ENTRY_POINT:-web}"
+else
+  ENTRY_POINT="${ENTRY_POINT:-http}"
+fi
 export ENTRY_POINT
 
 # -----------------------
