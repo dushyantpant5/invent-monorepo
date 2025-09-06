@@ -101,6 +101,13 @@ EOF
 fi
 
 # -----------------------
+# Ensure ENTRY_POINT env is set so template substitution works reliably
+# -----------------------
+# default to 'web' for local dev; on Render we will also bind 'http' so either works
+ENTRY_POINT="${ENTRY_POINT:-web}"
+export ENTRY_POINT
+
+# -----------------------
 # Render dynamic.yml from template
 # -----------------------
 if [ ! -f "$TEMPLATE" ]; then
@@ -206,5 +213,4 @@ else
     --entryPoints.web.address=":${PORT}" \
     --entryPoints.http.address=":${PORT}" \
     --log.level=DEBUG
-
 fi

@@ -2,7 +2,10 @@
 workspace = false
 description = "Run traefik for local dev (render template then run)"
 command = "sh"
-args = ["-c", "[ -f .env ] && . .env || true; cd traefik && ./start-traefik.sh"]
+args = [
+    "-c",
+    "[ -f .env ] && . .env || true; cd traefik && ENABLE_DASHBOARD=true ./start-traefik.sh",
+]
 
 [tasks.run-product]
 workspace = false
