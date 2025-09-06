@@ -1,15 +1,17 @@
+api:
+  dashboard: true
+  insecure: true
+
 entryPoints:
   web:
+    address: ":8080"
+  traefik:
     address: ":8081"
 
 providers:
   file:
-    filename: "./traefik/dynamic.yml"
+    filename: "./dynamic.yml"
     watch: true
-
-api:
-  dashboard: true
-  insecure: true
 
 log:
   level: DEBUG

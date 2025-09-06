@@ -9,4 +9,4 @@ http:
     product-service:
       loadBalancer:
         servers:
-          - url: "${PRODUCT_URL:http://127.0.0.1:8082}"
+          - url: "${PRODUCT_SERVICE_URL}"
