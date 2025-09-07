@@ -1,0 +1,192 @@
+name: Main — deploy changed services to Render
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-main-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services_json: ${{ steps.detect.outputs.services_json }}
+      traefik_changed: ${{ steps.detect.outputs.traefik_changed }}
+      crates_changed: ${{ steps.detect.outputs.crates_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed files and compute services
+        id: detect
+        run: |
+          set -euo pipefail
+
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          # Fallback for initial commit or shallow history
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE="${AFTER}^"
+          fi
+
+          echo "Diffing $BEFORE -> $AFTER"
+          changed=$(git diff --name-only "$BEFORE" "$AFTER" || git diff --name-only "$AFTER"^ "$AFTER" || true)
+          printf 'Changed files:\n%s\n' "$changed"
+
+          traefik_changed=false
+          crates_changed=false
+          services=()
+
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              traefik/*)
+                traefik_changed=true
+                services+=("traefik")
+                ;;
+              crates/*)
+                crates_changed=true
+                ;;
+              services/*)
+                svc=$(echo "$f" | cut -d/ -f2 | tr '[:upper:]' '[:lower:]')
+                if [ -n "$svc" ]; then
+                  services+=("$svc")
+                fi
+                ;;
+            esac
+          done <<< "$changed"
+
+          # If crates changed, deploy ALL services (and traefik)
+          if [ "$crates_changed" = "true" ]; then
+            echo "crates changed — deploying all services"
+            mapfile -t services < <(find services -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | tr '[:upper:]' '[:lower:]' | sort -u)
+            # ensure traefik included too
+            services+=( "traefik" )
+          fi
+
+          # dedupe & sort
+          if [ "${#services[@]}" -gt 0 ]; then
+            mapfile -t services < <(printf "%s\n" "${services[@]}" | sort -u)
+          fi
+
+          # Build JSON array for matrix include
+          services_json="[]"
+          if [ "${#services[@]}" -gt 0 ]; then
+            services_json="["
+            first=true
+            for s in "${services[@]}"; do
+              if [ "$first" = true ]; then first=false; else services_json="${services_json},"; fi
+              services_json="${services_json}{\"name\":\"${s}\"}"
+            done
+            services_json="${services_json}]"
+          fi
+
+          echo "services_json=$services_json" >> "$GITHUB_OUTPUT"
+          echo "traefik_changed=$traefik_changed" >> "$GITHUB_OUTPUT"
+          echo "crates_changed=$crates_changed" >> "$GITHUB_OUTPUT"
+
+          echo "Computed services_json: $services_json"
+          if [ "${#services[@]}" -gt 0 ]; then
+            printf 'Services to deploy: %s\n' "${services[*]}"
+          else
+            echo "No services to deploy"
+          fi
+
+  deploy-services:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: ${{ needs.detect-changes.outputs.services_json != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.detect-changes.outputs.services_json) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install jq & curl
+        run: sudo apt-get update && sudo apt-get install -y jq curl
+
+      - name: Deploy service (matrix item)
+        id: deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          # per-service secret must be named: RENDER_SERVICE_ID_<lowercase_service_name>
+          RENDER_SERVICE_ID: ${{ secrets[ format('RENDER_SERVICE_ID_{0}', matrix.name) ] }}
+        run: |
+          set -euo pipefail
+
+          svc="${{ matrix.name }}"
+          echo "Starting deploy for service: ${svc}"
+
+          if [ -z "${RENDER_SERVICE_ID:-}" ]; then
+            echo "Secret RENDER_SERVICE_ID_${svc} not found. Skipping deploy for ${svc}." >&2
+            # mark as skipped in outputs (optional)
+            echo "skipped=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "${RENDER_API_KEY:-}" ]; then
+            echo "RENDER_API_KEY secret not configured. Failing." >&2
+            exit 1
+          fi
+
+          echo "Triggering deploy via Render API for service id=${RENDER_SERVICE_ID}"
+          resp=$(curl -sS -X POST "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" -H "Content-Type: application/json" -d '{}')
+          echo "$resp" > deploy_out.json
+
+          deploy_id=$(jq -r '.id // empty' deploy_out.json || true)
+          if [ -z "$deploy_id" ]; then
+            echo "Failed to trigger deploy for ${svc}. Response:"
+            cat deploy_out.json
+            exit 1
+          fi
+
+          echo "Triggered deploy id=${deploy_id} for ${svc}"
+
+          # Poll deploy status with backoff (configurable)
+          max_attempts=40
+          attempt=0
+          sleep_sec=6
+
+          while [ $attempt -lt $max_attempts ]; do
+            attempt=$((attempt+1))
+            sleep $sleep_sec
+
+            out=$(curl -sS -H "Authorization: Bearer ${RENDER_API_KEY}" \
+              "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys/${deploy_id}" || true)
+            status=$(echo "$out" | jq -r '.status // empty' || true)
+            echo "attempt ${attempt}: status=${status}"
+
+            if [ "$status" = "live" ]; then
+              echo "Deploy is live for ${svc}"
+              echo "deploy_id=${deploy_id}" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            if [ "$status" = "failed" ]; then
+              echo "Deploy failed for ${svc}. API response:"
+              echo "$out"
+              exit 1
+            fi
+
+            # cap sleep to avoid too long delays
+            if [ $sleep_sec -lt 30 ]; then
+              sleep_sec=$((sleep_sec * 2))
+            fi
+          done
+
+          echo "Timed out waiting for deploy ${deploy_id} for service ${svc}" >&2
+          exit 1

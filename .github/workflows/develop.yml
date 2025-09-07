@@ -1,0 +1,69 @@
+name: Build + Traefik smoke
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  full-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run full workspace tests
+        run: cargo test --workspace --all-features --verbose
+
+  traefik-smoke:
+    needs: full-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yamllint, jq, PyYAML & shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq python3-yaml shellcheck
+
+      - name: Render dynamic.yml.template (using dev placeholders)
+        working-directory: traefik
+        env:
+          ENTRY_POINT: "http"
+          PRODUCT_SERVICE_URL: "http://product-service.local"
+        run: |
+          # Fail early if renderer missing
+          if [ ! -f render_dynamic.py ]; then
+            echo "ERROR: traefik/render_dynamic.py not found. Commit it or generate it in this job."
+            ls -la .
+            exit 1
+          fi
+
+          # Render template → dynamic.yml
+          python3 render_dynamic.py > dynamic.yml
+
+          # Soft lint: warn but don’t fail on style issues
+          yamllint -d "{extends: default, rules: {line-length: {max: 200}}}" dynamic.yml || true
+
+          # Hard check: fail if YAML cannot be parsed
+          python3 -c "import yaml,sys; yaml.safe_load(open('dynamic.yml')); print('YAML parse OK')"
+
+          # Preview first 120 lines in CI log
+          echo '---- dynamic.yml preview ----'
+          sed -n '1,120p' dynamic.yml || true
+          echo '---- end preview ----'
+
+      - name: ShellCheck start-traefik.sh
+        working-directory: traefik
+        run: shellcheck start-traefik.sh
