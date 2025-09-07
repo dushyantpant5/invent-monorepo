@@ -8,7 +8,6 @@ use axum::{routing::get, Extension, Json, Router};
 use db::{check_connection, get_pool, Db};
 use serde_json::json;
 use std::{net::SocketAddr, sync::Arc};
-use tracing_subscriber;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
