@@ -1,0 +1,58 @@
+name: Build + Traefik smoke
+
+on:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  full-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run full workspace tests
+        run: cargo test --workspace --all-features --verbose
+
+  traefik-smoke:
+    needs: full-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install yamllint, jq & PyYAML
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq python3-yaml
+
+      - name: Render dynamic.yml.template (using dev placeholders)
+        working-directory: Traefik
+        env:
+          ENTRY_POINT: "http"
+          PRODUCT_SERVICE_URL: "http://product-service.local"
+        run: |
+          # Render template → dynamic.yml
+          python3 render_dynamic.py > dynamic.yml
+
+          # Soft lint: report YAML style issues (non-fatal)
+          yamllint -d "{extends: default, rules: {line-length: {max: 200}}}" dynamic.yml || true
+
+          # Hard check: fail if YAML cannot be parsed
+          python3 -c "import yaml,sys; yaml.safe_load(open('dynamic.yml')); print('YAML parse OK')"
+
+          # Show first 120 lines in CI log
+          echo '---- dynamic.yml preview ----'
+          sed -n '1,120p' dynamic.yml || true
+          echo '---- end preview ----'
