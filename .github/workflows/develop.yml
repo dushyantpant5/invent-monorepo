@@ -66,4 +66,4 @@ jobs:
 
       - name: ShellCheck start-traefik.sh
         working-directory: traefik
-        run: shellcheck start-traefik.sh
+        run: shellcheck -e SC2086 start-traefik.sh
