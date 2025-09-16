@@ -1,7 +1,7 @@
 http:
   routers:
     product-router:
-      rule: "PathPrefix(`/api/product`)"
+      rule: "PathPrefix(`/api/v1`)"
       entryPoints: ["${ENTRY_POINT}"]
       service: product-service
 
