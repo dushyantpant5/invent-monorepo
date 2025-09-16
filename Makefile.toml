@@ -7,13 +7,13 @@ args = [
     "[ -f .env ] && . .env || true; cd traefik && ENABLE_DASHBOARD=true ./start-traefik.sh",
 ]
 
-[tasks.run-product]
+[tasks.run-core]
 workspace = false
 description = "Run product service"
 command = "sh"
 args = [
     "-c",
-    "[ -f .env ] && . .env || true; cd services/product && cargo run -p product",
+    "[ -f .env ] && . .env || true; cd invent-core && cargo run -p invent-core",
 ]
 
 [tasks.run-all]
@@ -21,3 +21,12 @@ workspace = false
 description = "Run product and traefik in background (dev) and stream logs"
 command = "sh"
 args = ["-c", "[ -f .env ] && . .env || true; ./scripts/run-all.sh"]
+
+[tasks.restart-ra]
+workspace = false
+description = "Restart Rust Analyzer by cleaning target and regenerating metadata"
+command = "sh"
+args = [
+    "-c",
+    "cargo clean && cargo metadata --no-deps --format-version 1 > /dev/null && echo '✅ Rust Analyzer restarted. Reload VS Code window if needed.'",
+]
