@@ -1,5 +1,5 @@
 [package]
-name = "product"
+name = "invent-core"
 version = "0.1.0"
 edition = "2021"
 
@@ -15,7 +15,11 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 dotenvy = { workspace = true }
+chrono = { workspace = true }
+sqlx = { workspace = true }
+rust_decimal = { workspace = true }
+
 
 # local path crates
-db = { path = "../../crates/db" }
-app-runner = { path = "../../crates/app-runner" }
+db = { path = "../crates/db" }
+app-runner = { path = "../crates/app-runner" }

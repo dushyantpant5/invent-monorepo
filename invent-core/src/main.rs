@@ -1,13 +1,13 @@
-mod api;
-mod model;
-mod repo;
-
 use app_runner::run_service;
 use axum::http::StatusCode;
 use axum::{routing::get, Extension, Json, Router};
 use db::{check_connection, get_pool, Db};
 use serde_json::json;
 use std::{net::SocketAddr, sync::Arc};
+
+mod services {
+    pub mod product_service;
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -27,6 +27,8 @@ async fn main() -> anyhow::Result<()> {
 
     let shared_pool = Arc::new(pool);
 
+    let api_router = Router::new().nest("/product", services::product_service::api::routes());
+
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
         .route(
@@ -45,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
                 }
             }),
         )
-        .nest("/api/product", crate::api::product::routes())
+        .nest("/api/v1", api_router)
         .layer(Extension(shared_pool));
 
     let port: u16 = std::env::var("PORT")
@@ -54,5 +56,5 @@ async fn main() -> anyhow::Result<()> {
         .unwrap_or(8082);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
-    run_service(app, addr, "product-service").await
+    run_service(app, addr, "invent-core").await
 }
