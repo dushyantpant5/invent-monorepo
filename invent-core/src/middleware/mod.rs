@@ -1,3 +1,3 @@
 pub mod auth;
 
-pub use auth::{AuthConfig,jwt_middleware};
+pub use auth::{jwt_middleware, AuthConfig};

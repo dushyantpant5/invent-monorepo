@@ -1,11 +1,11 @@
 mod middleware;
 use app_runner::run_service;
 use axum::http::StatusCode;
+use axum::middleware as axum_middleware;
 use axum::{routing::get, Extension, Json, Router};
 use db::{check_connection, get_pool, Db};
 use serde_json::json;
 use std::{net::SocketAddr, sync::Arc};
-use axum::middleware as axum_middleware;
 
 mod services {
     pub mod product_service;
@@ -33,7 +33,10 @@ async fn main() -> anyhow::Result<()> {
 
     let api_router = Router::new()
         .nest("/product", services::product_service::api::routes())
-        .layer(axum_middleware::from_fn_with_state(auth_config.clone(),middleware::jwt_middleware));
+        .layer(axum_middleware::from_fn_with_state(
+            auth_config.clone(),
+            middleware::jwt_middleware,
+        ));
 
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
