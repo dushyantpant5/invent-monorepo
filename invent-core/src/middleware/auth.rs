@@ -24,6 +24,7 @@ pub struct AuthClaims {
 }
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct UserContext {
     pub id: String,
     pub email: String,
@@ -75,7 +76,7 @@ pub async fn jwt_middleware<B>(
     let token_data =
         match decode::<AuthClaims>(token, &auth_config.decoding_key, &auth_config.validation) {
             Ok(td) => td,
-            Err(err) => {
+            Err(_err) => {
                 return Err((StatusCode::UNAUTHORIZED, "invalid token"));
             }
         };
