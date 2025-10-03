@@ -1,5 +1,7 @@
+mod middleware;
 use app_runner::run_service;
 use axum::http::StatusCode;
+use axum::middleware as axum_middleware;
 use axum::{routing::get, Extension, Json, Router};
 use db::{check_connection, get_pool, Db};
 use serde_json::json;
@@ -27,7 +29,14 @@ async fn main() -> anyhow::Result<()> {
 
     let shared_pool = Arc::new(pool);
 
-    let api_router = Router::new().nest("/product", services::product_service::api::routes());
+    let auth_config = middleware::AuthConfig::from_env();
+
+    let api_router = Router::new()
+        .nest("/product", services::product_service::api::routes())
+        .layer(axum_middleware::from_fn_with_state(
+            auth_config.clone(),
+            middleware::jwt_middleware,
+        ));
 
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
