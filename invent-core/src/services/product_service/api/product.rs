@@ -1,9 +1,9 @@
-use axum::{extract::Json, http::StatusCode, Json as AxumJson};
-use serde::Deserialize;
-use uuid::Uuid;
 use crate::extractors::AuthUser;
 use crate::services::product_service::model::product::Product;
 use crate::services::product_service::repo::product_repo::RepoExtractor;
+use axum::{extract::Json, http::StatusCode, Json as AxumJson};
+use serde::Deserialize;
+use uuid::Uuid;
 
 #[derive(Deserialize)]
 pub struct CreateProductPayload {
@@ -49,13 +49,11 @@ pub async fn create_product(
             tracing::error!("db error creating product: {:?}", e);
 
             let status = match &e {
-                sqlx::Error::Database(db_err) => {
-                    match db_err.code().as_deref() {
-                        Some("23505") => StatusCode::CONFLICT,
-                        Some("23503") => StatusCode::BAD_REQUEST,
-                        _ => StatusCode::INTERNAL_SERVER_ERROR,
-                    }
-                }
+                sqlx::Error::Database(db_err) => match db_err.code().as_deref() {
+                    Some("23505") => StatusCode::CONFLICT,
+                    Some("23503") => StatusCode::BAD_REQUEST,
+                    _ => StatusCode::INTERNAL_SERVER_ERROR,
+                },
                 sqlx::Error::RowNotFound => StatusCode::NOT_FOUND,
                 _ => StatusCode::INTERNAL_SERVER_ERROR,
             };

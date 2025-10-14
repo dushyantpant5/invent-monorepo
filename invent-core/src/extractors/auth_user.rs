@@ -1,7 +1,7 @@
+use crate::middleware::auth::{Roles, UserContext};
 use axum::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::{request::Parts, StatusCode};
-use crate::middleware::auth::{Roles, UserContext};
 
 #[derive(Clone, Debug)]
 
@@ -17,7 +17,6 @@ impl AuthUser {
         matches!(self.0.role, Roles::Staff)
     }
 }
-
 
 #[async_trait]
 impl<S> FromRequestParts<S> for AuthUser

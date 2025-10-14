@@ -88,9 +88,9 @@ pub async fn jwt_middleware<B>(
     let auth_claim = token_data.claims;
 
     req.extensions_mut().insert(UserContext {
-        user_id:auth_claim.user_id,
-        inventory_id:auth_claim.inventory_id,
-        role:auth_claim.role
+        user_id: auth_claim.user_id,
+        inventory_id: auth_claim.inventory_id,
+        role: auth_claim.role,
     });
 
     Ok(next.run(req).await)
