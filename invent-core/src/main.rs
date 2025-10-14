@@ -1,4 +1,6 @@
 mod middleware;
+mod extractors;
+
 use app_runner::run_service;
 use axum::http::StatusCode;
 use axum::middleware as axum_middleware;
