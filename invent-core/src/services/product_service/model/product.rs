@@ -15,7 +15,7 @@ pub struct Product {
     pub quantity: i32,
     pub created_at: DateTime<Utc>,
 }
-
+#[allow(dead_code)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CreateProduct {
     pub id: Uuid,

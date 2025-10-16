@@ -7,27 +7,31 @@ use axum::{
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use std::{env, sync::Arc};
+use uuid::Uuid;
 
-// To be implemented later
-// #[derive(Serialize, Deserialize, Debug, Clone)]
-// #[serde(rename_all = "lowercase")]
-// pub enum Roles {
-//     Admin,
-//     Staff,
-// }
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum Roles {
+    Admin,
+    Staff,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthClaims {
-    pub id: String,
-    pub email: String,
+    #[serde(rename = "userId")]
+    pub user_id: Uuid,
+    #[serde(rename = "inventoryId")]
+    pub inventory_id: Uuid,
+    pub role: Roles,
     pub iat: Option<usize>,
 }
 
 #[derive(Clone, Debug)]
 #[allow(dead_code)]
 pub struct UserContext {
-    pub id: String,
-    pub email: String,
+    pub user_id: Uuid,
+    pub inventory_id: Uuid,
+    pub role: Roles,
 }
 
 #[derive(Clone)]
@@ -84,8 +88,9 @@ pub async fn jwt_middleware<B>(
     let auth_claim = token_data.claims;
 
     req.extensions_mut().insert(UserContext {
-        id: auth_claim.id,
-        email: auth_claim.email,
+        user_id: auth_claim.user_id,
+        inventory_id: auth_claim.inventory_id,
+        role: auth_claim.role,
     });
 
     Ok(next.run(req).await)
