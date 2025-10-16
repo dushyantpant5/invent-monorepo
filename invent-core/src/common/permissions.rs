@@ -3,8 +3,8 @@ use crate::middleware::auth::{Roles, UserContext};
 #[allow(dead_code)]
 pub struct ProductPermission {}
 #[allow(dead_code)]
-impl ProductPermission{
+impl ProductPermission {
     pub fn can_create_product(user: &UserContext) -> bool {
-        matches!(user.role , Roles::Admin)
+        matches!(user.role, Roles::Admin)
     }
 }

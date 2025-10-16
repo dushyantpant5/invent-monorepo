@@ -1,6 +1,6 @@
+mod common;
 mod extractors;
 mod middleware;
-mod common;
 
 use app_runner::run_service;
 use axum::http::StatusCode;
