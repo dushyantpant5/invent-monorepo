@@ -1,10 +1,10 @@
+use crate::common::ProductPermission;
 use crate::extractors::AuthUser;
 use crate::services::product_service::model::product::Product;
 use crate::services::product_service::repo::product_repo::RepoExtractor;
 use axum::{extract::Json, http::StatusCode, Json as AxumJson};
 use serde::Deserialize;
 use uuid::Uuid;
-
 #[derive(Deserialize)]
 pub struct CreateProductPayload {
     pub category_id: Option<Uuid>,
@@ -20,7 +20,13 @@ pub async fn create_product(
     AuthUser(user): AuthUser,
     Json(payload): Json<CreateProductPayload>,
 ) -> Result<(StatusCode, AxumJson<Product>), (StatusCode, String)> {
-    // Basic validation
+    if !ProductPermission::can_create_product(&user) {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You are not allowed to create products".into(),
+        ));
+    }
+
     if payload.name.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, "name is required".into()));
     }
