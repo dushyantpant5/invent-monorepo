@@ -1,18 +1,17 @@
 mod common;
+mod errors;
 mod extractors;
 mod middleware;
+mod services;
 
 use app_runner::run_service;
-use axum::http::StatusCode;
-use axum::middleware as axum_middleware;
-use axum::{routing::get, Extension, Json, Router};
-use db::{check_connection, get_pool, Db};
+use axum::{
+    http::StatusCode, middleware as axum_middleware, routing::get, Extension, Json, Router,
+};
+use db::{check_connection, get_db, repos::ProductRepository};
 use serde_json::json;
+use services::product::{api as product_api, service::ProductService};
 use std::{net::SocketAddr, sync::Arc};
-
-mod services {
-    pub mod product_service;
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -20,37 +19,36 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let max_conns: u32 = std::env::var("DB_MAX_CONNS")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(5);
 
-    let pool: Db = get_pool(&database_url, max_conns).await?;
-    if !check_connection(&pool).await {
+    let db = get_db(&database_url).await?;
+    if !check_connection(&db).await {
         anyhow::bail!("database not ready");
     }
 
-    let shared_pool = Arc::new(pool);
+    let product_repo = Arc::new(ProductRepository::new(db.clone()));
+    let product_service = Arc::new(ProductService::new(product_repo));
 
     let auth_config = middleware::AuthConfig::from_env();
 
     let api_router = Router::new()
-        .nest("/product", services::product_service::api::routes())
+        .nest("/product", product_api::routes(product_service))
         .layer(axum_middleware::from_fn_with_state(
             auth_config.clone(),
             middleware::jwt_middleware,
         ));
+
+    let shared_db = db.clone();
 
     let app = Router::new()
         .route("/health", get(|| async { "OK" }))
         .route(
             "/ready",
             get({
-                let pool = shared_pool.clone();
+                let db = shared_db.clone();
                 move || {
-                    let pool = pool.clone();
+                    let db = db.clone();
                     async move {
-                        if check_connection(&pool).await {
+                        if check_connection(&db).await {
                             Ok(Json(json!({ "ok": true })))
                         } else {
                             Err(StatusCode::SERVICE_UNAVAILABLE)
@@ -60,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
             }),
         )
         .nest("/api/v1", api_router)
-        .layer(Extension(shared_pool));
+        .layer(Extension(shared_db));
 
     let port: u16 = std::env::var("PORT")
         .ok()

@@ -10,3 +10,6 @@
 /traefik/dynamic.yml
 tmp
 .idea
+all_code.txt
+refactor.sh
+refactor_seaorm.sh
