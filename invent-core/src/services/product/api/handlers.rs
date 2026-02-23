@@ -7,9 +7,7 @@ use uuid::Uuid;
 use db::entities::Product;
 
 use crate::{
-    common::ProductPermission,
-    errors::AppError,
-    extractors::AuthUser,
+    common::ProductPermission, errors::AppError, extractors::AuthUser,
     services::product::service::ProductService,
 };
 
@@ -51,7 +49,9 @@ pub async fn create_product(
     Json(payload): Json<CreateProductRequest>,
 ) -> Result<(StatusCode, Json<ProductResponse>), AppError> {
     if !ProductPermission::can_create_product(&user) {
-        return Err(AppError::Forbidden("you are not allowed to create products"));
+        return Err(AppError::Forbidden(
+            "you are not allowed to create products",
+        ));
     }
 
     let product = service

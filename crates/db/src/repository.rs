@@ -1,6 +1,6 @@
+use crate::error::DbResult;
 use async_trait::async_trait;
 use uuid::Uuid;
-use crate::error::DbResult;
 
 #[derive(Debug, Clone)]
 pub struct Pagination {
@@ -10,12 +10,20 @@ pub struct Pagination {
 
 impl Pagination {
     pub fn new(page: u64, page_size: u64) -> Self {
-        Self { limit: page_size, offset: (page - 1) * page_size }
+        Self {
+            limit: page_size,
+            offset: (page - 1) * page_size,
+        }
     }
 }
 
 impl Default for Pagination {
-    fn default() -> Self { Self { limit: 20, offset: 0 } }
+    fn default() -> Self {
+        Self {
+            limit: 20,
+            offset: 0,
+        }
+    }
 }
 
 #[derive(Debug)]

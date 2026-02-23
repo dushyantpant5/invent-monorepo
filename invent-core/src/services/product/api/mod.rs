@@ -1,7 +1,7 @@
 pub mod handlers;
 
-use axum::{routing::post, Router};
 use crate::services::product::service::ProductService;
+use axum::{routing::post, Router};
 use std::sync::Arc;
 
 pub fn routes(service: Arc<ProductService>) -> Router {

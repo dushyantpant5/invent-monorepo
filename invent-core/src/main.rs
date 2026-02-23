@@ -6,10 +6,7 @@ mod services;
 
 use app_runner::run_service;
 use axum::{
-    http::StatusCode,
-    middleware as axum_middleware,
-    routing::get,
-    Extension, Json, Router,
+    http::StatusCode, middleware as axum_middleware, routing::get, Extension, Json, Router,
 };
 use db::{check_connection, get_db, repos::ProductRepository};
 use serde_json::json;
@@ -28,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
         anyhow::bail!("database not ready");
     }
 
-    let product_repo    = Arc::new(ProductRepository::new(db.clone()));
+    let product_repo = Arc::new(ProductRepository::new(db.clone()));
     let product_service = Arc::new(ProductService::new(product_repo));
 
     let auth_config = middleware::AuthConfig::from_env();

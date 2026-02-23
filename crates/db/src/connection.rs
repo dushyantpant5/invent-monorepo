@@ -1,4 +1,4 @@
-use sea_orm::{Database, DatabaseConnection, DbErr, ConnectionTrait};
+use sea_orm::{ConnectionTrait, Database, DatabaseConnection, DbErr};
 
 pub type Db = DatabaseConnection;
 

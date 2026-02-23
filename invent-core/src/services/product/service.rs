@@ -1,12 +1,14 @@
+#![allow(dead_code)]
+
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
-use rust_decimal::Decimal;
 
 use db::{
-    DbError, DbResult,
     entities::Product,
-    repos::{CreateProduct, UpdateProduct, ProductRepository},
+    repos::{CreateProduct, ProductRepository, UpdateProduct},
     repository::{Page, Pagination, Repository},
+    DbError, DbResult,
 };
 
 #[derive(Clone)]
@@ -37,14 +39,17 @@ impl ProductService {
         if quantity < 0 {
             return Err(DbError::InvalidInput("quantity must be >= 0".into()));
         }
-        self.repo.create(CreateProduct {
-            user_id,
-            category_id,
-            name: name.trim().to_string(),
-            description,
-            price,
-            quantity,
-        }).await
+
+        self.repo
+            .create(CreateProduct {
+                user_id,
+                category_id,
+                name: name.trim().to_string(),
+                description,
+                price,
+                quantity,
+            })
+            .await
     }
 
     pub async fn get_product(&self, id: Uuid) -> DbResult<Product> {
@@ -55,7 +60,11 @@ impl ProductService {
         self.repo.find_all(pagination).await
     }
 
-    pub async fn list_by_user(&self, user_id: Uuid, pagination: Pagination) -> DbResult<Page<Product>> {
+    pub async fn list_by_user(
+        &self,
+        user_id: Uuid,
+        pagination: Pagination,
+    ) -> DbResult<Page<Product>> {
         self.repo.find_by_user(user_id, pagination).await
     }
 
@@ -73,18 +82,25 @@ impl ProductService {
                 return Err(DbError::InvalidInput("name cannot be empty".into()));
             }
         }
+
         if let Some(p) = price {
             if p < Decimal::ZERO {
                 return Err(DbError::InvalidInput("price must be >= 0".into()));
             }
         }
-        self.repo.update(id, UpdateProduct {
-            category_id,
-            name: name.map(|n| n.trim().to_string()),
-            description,
-            price,
-            quantity,
-        }).await
+
+        self.repo
+            .update(
+                id,
+                UpdateProduct {
+                    category_id,
+                    name: name.map(|n| n.trim().to_string()),
+                    description,
+                    price,
+                    quantity,
+                },
+            )
+            .await
     }
 
     pub async fn delete_product(&self, id: Uuid) -> DbResult<()> {

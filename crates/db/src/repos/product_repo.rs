@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 use sea_orm::{
-    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection,
-    EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
+    ActiveModelTrait, ActiveValue::Set, ColumnTrait, DatabaseConnection, EntityTrait,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect,
 };
 use uuid::Uuid;
 
@@ -69,7 +69,12 @@ impl ProductRepository {
             .await
             .map_err(DbError::from_sea)?;
 
-        Ok(Page { items, total, limit: pagination.limit, offset: pagination.offset })
+        Ok(Page {
+            items,
+            total,
+            limit: pagination.limit,
+            offset: pagination.offset,
+        })
     }
 
     /// Products within a specific category.
@@ -93,7 +98,12 @@ impl ProductRepository {
             .await
             .map_err(DbError::from_sea)?;
 
-        Ok(Page { items, total, limit: pagination.limit, offset: pagination.offset })
+        Ok(Page {
+            items,
+            total,
+            limit: pagination.limit,
+            offset: pagination.offset,
+        })
     }
 
     /// Products at or below a stock threshold — used for inventory alerts.
@@ -115,8 +125,7 @@ impl ProductRepository {
         use sea_orm::Condition;
         let pattern = format!("%{}%", query.to_lowercase());
 
-        let condition = Condition::any()
-            .add(Column::Name.contains(&pattern));
+        let condition = Condition::any().add(Column::Name.contains(&pattern));
 
         let total = Entity::find()
             .filter(condition.clone())
@@ -133,7 +142,12 @@ impl ProductRepository {
             .await
             .map_err(DbError::from_sea)?;
 
-        Ok(Page { items, total, limit: pagination.limit, offset: pagination.offset })
+        Ok(Page {
+            items,
+            total,
+            limit: pagination.limit,
+            offset: pagination.offset,
+        })
     }
 }
 
@@ -163,7 +177,12 @@ impl Repository<Product, CreateProduct, UpdateProduct> for ProductRepository {
             .await
             .map_err(DbError::from_sea)?;
 
-        Ok(Page { items, total, limit: pagination.limit, offset: pagination.offset })
+        Ok(Page {
+            items,
+            total,
+            limit: pagination.limit,
+            offset: pagination.offset,
+        })
     }
 
     async fn create(&self, payload: CreateProduct) -> DbResult<Product> {
@@ -178,10 +197,7 @@ impl Repository<Product, CreateProduct, UpdateProduct> for ProductRepository {
             created_at: Set(chrono::Utc::now()),
         };
 
-        model
-            .insert(&self.db)
-            .await
-            .map_err(DbError::from_sea)
+        model.insert(&self.db).await.map_err(DbError::from_sea)
     }
 
     async fn update(&self, id: Uuid, payload: UpdateProduct) -> DbResult<Product> {
@@ -194,16 +210,23 @@ impl Repository<Product, CreateProduct, UpdateProduct> for ProductRepository {
 
         let mut model: ActiveModel = existing.into();
 
-        if let Some(v) = payload.category_id { model.category_id = Set(Some(v)); }
-        if let Some(v) = payload.name        { model.name = Set(v); }
-        if let Some(v) = payload.description { model.description = Set(Some(v)); }
-        if let Some(v) = payload.price       { model.price = Set(v); }
-        if let Some(v) = payload.quantity    { model.quantity = Set(v); }
+        if let Some(v) = payload.category_id {
+            model.category_id = Set(Some(v));
+        }
+        if let Some(v) = payload.name {
+            model.name = Set(v);
+        }
+        if let Some(v) = payload.description {
+            model.description = Set(Some(v));
+        }
+        if let Some(v) = payload.price {
+            model.price = Set(v);
+        }
+        if let Some(v) = payload.quantity {
+            model.quantity = Set(v);
+        }
 
-        model
-            .update(&self.db)
-            .await
-            .map_err(DbError::from_sea)
+        model.update(&self.db).await.map_err(DbError::from_sea)
     }
 
     async fn delete(&self, id: Uuid) -> DbResult<()> {
