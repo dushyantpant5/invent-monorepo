@@ -4,7 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0"
-sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "macros"] }
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-tracing = "0.1"
+sea-orm = { version = "0.12", features = [
+    "sqlx-postgres",
+    "runtime-tokio-rustls",
+    "macros",
+    "with-uuid",
+    "with-chrono",
+    "with-rust_decimal",
+] }
+anyhow       = { workspace = true }
+tracing      = { workspace = true }
+tokio        = { workspace = true }
+uuid         = { workspace = true }
+chrono       = { workspace = true }
+rust_decimal = { workspace = true }
+serde        = { workspace = true }
+async-trait  = "0.1"
+thiserror    = "1"

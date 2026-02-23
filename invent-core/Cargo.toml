@@ -4,24 +4,20 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = "0.6"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
-tracing = "0.1"
+axum             = { workspace = true }
+tokio            = { workspace = true }
+tracing          = { workspace = true }
 tracing-subscriber = "0.3"
-anyhow = "1.0"
+anyhow           = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+uuid             = { workspace = true }
+dotenvy          = { workspace = true }
+chrono           = { workspace = true }
+rust_decimal     = { workspace = true }
+jsonwebtoken     = { version = "10.0.0", features = ["rust_crypto"] }
+base64           = "0.21.7"
+thiserror        = "1"
 
-#Centralized workspace dependencies 
-serde = { workspace = true }
-serde_json = { workspace = true }
-uuid = { workspace = true }
-dotenvy = { workspace = true }
-chrono = { workspace = true }
-sqlx = { workspace = true }
-rust_decimal = { workspace = true }
-
-
-# local path crates
-db = { path = "../crates/db" }
+db         = { path = "../crates/db" }
 app-runner = { path = "../crates/app-runner" }
-jsonwebtoken = { version = "10.0.0", features = ["rust_crypto"] }
-base64 = "0.21.7"
