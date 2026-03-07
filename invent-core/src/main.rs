@@ -1,16 +1,13 @@
-mod common;
-mod errors;
+mod app;
+mod domain;
 mod extractors;
 mod middleware;
-mod services;
+mod shared;
 
 use app_runner::run_service;
-use axum::{
-    http::StatusCode, middleware as axum_middleware, routing::get, Extension, Json, Router,
-};
 use db::{check_connection, get_db, repos::ProductRepository};
-use serde_json::json;
-use services::product::{api as product_api, service::ProductService};
+use domain::product::service::{ProductRepo, ProductService, ProductServiceImpl};
+use middleware::AuthConfig;
 use std::{net::SocketAddr, sync::Arc};
 
 #[tokio::main]
@@ -19,46 +16,23 @@ async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
     let db = get_db(&database_url).await?;
     if !check_connection(&db).await {
         anyhow::bail!("database not ready");
     }
 
-    let product_repo = Arc::new(ProductRepository::new(db.clone()));
-    let product_service = Arc::new(ProductService::new(product_repo));
+    // ── Dependency graph ───────────────────────────────────────────────────
+    //
+    // Wire concrete implementations to their trait interfaces here.
+    // Handlers and services never see concrete types — only trait objects.
+    let product_repo: Arc<dyn ProductRepo> = Arc::new(ProductRepository::new(db.clone()));
+    let product_service: Arc<dyn ProductService> =
+        Arc::new(ProductServiceImpl::new(product_repo));
 
-    let auth_config = middleware::AuthConfig::from_env();
+    let auth_config = AuthConfig::from_env();
 
-    let api_router = Router::new()
-        .nest("/product", product_api::routes(product_service))
-        .layer(axum_middleware::from_fn_with_state(
-            auth_config.clone(),
-            middleware::jwt_middleware,
-        ));
-
-    let shared_db = db.clone();
-
-    let app = Router::new()
-        .route("/health", get(|| async { "OK" }))
-        .route(
-            "/ready",
-            get({
-                let db = shared_db.clone();
-                move || {
-                    let db = db.clone();
-                    async move {
-                        if check_connection(&db).await {
-                            Ok(Json(json!({ "ok": true })))
-                        } else {
-                            Err(StatusCode::SERVICE_UNAVAILABLE)
-                        }
-                    }
-                }
-            }),
-        )
-        .nest("/api/v1", api_router)
-        .layer(Extension(shared_db));
+    // ── Start server ───────────────────────────────────────────────────────
+    let app = app::build_app(db, product_service, auth_config);
 
     let port: u16 = std::env::var("PORT")
         .ok()
