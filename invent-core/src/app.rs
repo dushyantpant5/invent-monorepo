@@ -1,11 +1,13 @@
-use axum::{http::StatusCode, middleware as axum_middleware, routing::get, Extension, Json, Router};
+use axum::{
+    http::StatusCode, middleware as axum_middleware, routing::get, Extension, Json, Router,
+};
 use db::{check_connection, Db};
 use serde_json::json;
 use std::sync::Arc;
 
 use crate::{
     domain::product::{routes as product_routes, ProductService},
-    middleware::{AuthConfig, jwt_middleware},
+    middleware::{jwt_middleware, AuthConfig},
 };
 
 /// Assembles the full Axum application.

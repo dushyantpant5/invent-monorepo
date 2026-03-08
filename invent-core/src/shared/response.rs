@@ -22,18 +22,32 @@ pub struct PagedData<T: Serialize> {
 
 impl<T: Serialize> PagedData<T> {
     pub fn new(items: Vec<T>, total: u64, limit: u64, offset: u64) -> Self {
-        Self { items, total, limit, offset }
+        Self {
+            items,
+            total,
+            limit,
+            offset,
+        }
     }
 }
 
 /// 200 OK with a JSON envelope.
 pub fn ok<T: Serialize>(data: T) -> Json<ApiResponse<T>> {
-    Json(ApiResponse { success: true, data })
+    Json(ApiResponse {
+        success: true,
+        data,
+    })
 }
 
 /// 201 Created with a JSON envelope.
 pub fn created<T: Serialize>(data: T) -> (StatusCode, Json<ApiResponse<T>>) {
-    (StatusCode::CREATED, Json(ApiResponse { success: true, data }))
+    (
+        StatusCode::CREATED,
+        Json(ApiResponse {
+            success: true,
+            data,
+        }),
+    )
 }
 
 /// 204 No Content.

@@ -26,8 +26,7 @@ async fn main() -> anyhow::Result<()> {
     // Wire concrete implementations to their trait interfaces here.
     // Handlers and services never see concrete types — only trait objects.
     let product_repo: Arc<dyn ProductRepo> = Arc::new(ProductRepository::new(db.clone()));
-    let product_service: Arc<dyn ProductService> =
-        Arc::new(ProductServiceImpl::new(product_repo));
+    let product_service: Arc<dyn ProductService> = Arc::new(ProductServiceImpl::new(product_repo));
 
     let auth_config = AuthConfig::from_env();
 

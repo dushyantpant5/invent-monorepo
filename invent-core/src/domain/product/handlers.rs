@@ -31,8 +31,12 @@ pub struct PaginationQuery {
     pub page_size: u64,
 }
 
-fn default_page() -> u64 { 1 }
-fn default_page_size() -> u64 { 20 }
+fn default_page() -> u64 {
+    1
+}
+fn default_page_size() -> u64 {
+    20
+}
 
 impl From<PaginationQuery> for Pagination {
     fn from(q: PaginationQuery) -> Self {
@@ -56,7 +60,9 @@ pub async fn create_product(
     Json(payload): Json<CreateProductRequest>,
 ) -> Result<(StatusCode, Json<ApiResponse<ProductResponse>>), AppError> {
     if !ProductPermission::can_create_product(&user) {
-        return Err(AppError::Forbidden("you are not allowed to create products"));
+        return Err(AppError::Forbidden(
+            "you are not allowed to create products",
+        ));
     }
     payload.validate()?;
     let product = service.create_product(user.user_id, payload).await?;
@@ -79,7 +85,9 @@ pub async fn list_my_products(
     AuthUser(user): AuthUser,
     Query(pagination): Query<PaginationQuery>,
 ) -> Result<Json<ApiResponse<PagedData<ProductResponse>>>, AppError> {
-    let page = service.list_by_user(user.user_id, pagination.into()).await?;
+    let page = service
+        .list_by_user(user.user_id, pagination.into())
+        .await?;
     let data = PagedData::new(
         page.items.into_iter().map(ProductResponse::from).collect(),
         page.total,
@@ -97,7 +105,9 @@ pub async fn update_product(
     Json(payload): Json<UpdateProductRequest>,
 ) -> Result<Json<ApiResponse<ProductResponse>>, AppError> {
     if !ProductPermission::can_update_product(&user) {
-        return Err(AppError::Forbidden("you are not allowed to update products"));
+        return Err(AppError::Forbidden(
+            "you are not allowed to update products",
+        ));
     }
     payload.validate()?;
     let product = service.update_product(id, payload).await?;
@@ -111,7 +121,9 @@ pub async fn delete_product(
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, AppError> {
     if !ProductPermission::can_delete_product(&user) {
-        return Err(AppError::Forbidden("you are not allowed to delete products"));
+        return Err(AppError::Forbidden(
+            "you are not allowed to delete products",
+        ));
     }
     service.delete_product(id).await?;
     Ok(no_content())
