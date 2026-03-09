@@ -7,6 +7,7 @@ use db::DbError;
 use serde_json::json;
 use thiserror::Error;
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("not found")]
@@ -21,6 +22,9 @@ pub enum AppError {
     #[error("forbidden: {0}")]
     Forbidden(&'static str),
 
+    #[error("unauthorized")]
+    Unauthorized,
+
     #[error("internal error")]
     Internal,
 }
@@ -33,7 +37,7 @@ impl From<DbError> for AppError {
             DbError::ForeignKey(msg) => AppError::BadRequest(msg),
             DbError::InvalidInput(msg) => AppError::BadRequest(msg),
             DbError::SeaOrm(err) => {
-                tracing::error!("unhandled sqlx error: {:?}", err);
+                tracing::error!("unhandled db error: {:?}", err);
                 AppError::Internal
             }
         }
@@ -47,6 +51,7 @@ impl IntoResponse for AppError {
             AppError::Conflict(msg) => (StatusCode::CONFLICT, msg.clone()),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.to_string()),
+            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, self.to_string()),
             AppError::Internal => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "internal server error".into(),
