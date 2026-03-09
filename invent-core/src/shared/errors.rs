@@ -7,6 +7,7 @@ use db::DbError;
 use serde_json::json;
 use thiserror::Error;
 
+#[allow(dead_code)]
 #[derive(Debug, Error)]
 pub enum AppError {
     #[error("not found")]
